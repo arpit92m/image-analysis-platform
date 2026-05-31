@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"image-analysis-platform/database"
@@ -41,7 +42,7 @@ func UploadImage(c *gin.Context) {
 	c.JSON(http.StatusCreated, image)
 }
 
-// ListImages handles GET /api/v1/images?user_id=xxx
+// ListImages handles GET /api/v1/images?user_id=xxx&page=1&per_page=20
 func ListImages(c *gin.Context) {
 	userID := c.Query("user_id")
 	if userID == "" {
@@ -49,16 +50,35 @@ func ListImages(c *gin.Context) {
 		return
 	}
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 20
+	}
+	offset := (page - 1) * perPage
+
+	var total int64
+	database.DB.Model(&models.Image{}).Where("user_id = ?", userID).Count(&total)
+
 	var images []models.Image
-	result := database.DB.Where("user_id = ?", userID).Order("upload_date desc").Find(&images)
+	result := database.DB.Where("user_id = ?", userID).
+		Order("upload_date desc").
+		Limit(perPage).
+		Offset(offset).
+		Find(&images)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch images"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"images": images,
-		"count":  len(images),
+		"images":   images,
+		"total":    total,
+		"page":     page,
+		"per_page": perPage,
 	})
 }
 
@@ -129,4 +149,29 @@ func DeleteImage(c *gin.Context) {
 	database.DB.Delete(&image)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Image deleted successfully"})
+}
+
+// DownloadImage handles GET /api/v1/images/:id/download
+// Returns the storage path as a download URL since we store metadata only.
+// In a production system this would return a pre-signed URL from object storage.
+func DownloadImage(c *gin.Context) {
+	id := c.Param("id")
+
+	var image models.Image
+	if err := database.DB.First(&image, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+		return
+	}
+
+	// In production, generate a pre-signed URL from S3/GCS here.
+	// For now return a simulated download URL.
+	downloadURL := fmt.Sprintf("/files/%s", image.StoragePath)
+
+	c.JSON(http.StatusOK, gin.H{
+		"image_id":     image.ID,
+		"filename":     image.OriginalFilename,
+		"download_url": downloadURL,
+		"file_size":    image.FileSize,
+		"file_type":    image.FileType,
+	})
 }

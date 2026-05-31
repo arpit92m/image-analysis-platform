@@ -14,5 +14,6 @@ func Setup(r *gin.Engine) {
 		v1.GET("/images/:id", handlers.GetImage)
 		v1.PUT("/images/:id", handlers.UpdateImage)
 		v1.DELETE("/images/:id", handlers.DeleteImage)
+		v1.GET("/images/:id/download", handlers.DownloadImage)
 	}
 }
