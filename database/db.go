@@ -18,7 +18,7 @@ func Init(dbPath string) {
 		log.Fatal("Failed to connect to database: ", err)
 	}
 
-	err = DB.AutoMigrate(&models.Image{})
+	err = DB.AutoMigrate(&models.Image{}, &models.User{})
 	if err != nil {
 		log.Fatal("Failed to run migrations: ", err)
 	}
