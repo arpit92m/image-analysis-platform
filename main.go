@@ -6,6 +6,7 @@ import (
 
 	"image-analysis-platform/config"
 	"image-analysis-platform/database"
+	"image-analysis-platform/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +28,8 @@ func main() {
 			"status": "ok",
 		})
 	})
+
+	routes.Setup(r)
 
 	log.Printf("Starting server on :%s\n", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
