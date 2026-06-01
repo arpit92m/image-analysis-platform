@@ -9,7 +9,7 @@ import (
 )
 
 func TestRegister(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	w := performRequest(r, "POST", "/api/v1/auth/register", map[string]string{
@@ -29,7 +29,7 @@ func TestRegister(t *testing.T) {
 }
 
 func TestRegisterDuplicateUsername(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	body := map[string]string{
@@ -46,7 +46,7 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 }
 
 func TestRegisterValidation(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	// missing password
@@ -68,7 +68,7 @@ func TestRegisterValidation(t *testing.T) {
 }
 
 func TestLoginSuccess(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	performRequest(r, "POST", "/api/v1/auth/register", map[string]string{
@@ -96,7 +96,7 @@ func TestLoginSuccess(t *testing.T) {
 }
 
 func TestLoginWrongPassword(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	performRequest(r, "POST", "/api/v1/auth/register", map[string]string{
@@ -115,7 +115,7 @@ func TestLoginWrongPassword(t *testing.T) {
 }
 
 func TestRefreshToken(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	performRequest(r, "POST", "/api/v1/auth/register", map[string]string{

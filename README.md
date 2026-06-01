@@ -35,6 +35,22 @@ Configuration is done via environment variables:
 go test ./... -v
 ```
 
+## API Verification and DB Seeding
+
+With the service running, execute the Go smoke-test/seeding script:
+
+```bash
+go run ./scripts/api_verify_seed.go
+```
+
+By default, the script targets `http://localhost:8081`, verifies every documented endpoint, checks common error paths, and creates seed users plus image metadata rows through the API. The throwaway image used to verify delete behavior is removed, while seed data remains in the DB.
+
+Optional flags:
+
+```bash
+go run ./scripts/api_verify_seed.go -base-url http://localhost:8081 -seed-users 3 -seed-images 4
+```
+
 ## API Endpoints
 
 ### Public

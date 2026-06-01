@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	"image-analysis-platform/database"
 	"image-analysis-platform/middleware"
@@ -15,7 +16,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func setupTestDB() {
+func setupTestDB(t *testing.T) {
+	t.Helper()
+	t.Setenv("UPLOAD_DIR", t.TempDir())
+
 	var err error
 	database.DB, err = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {

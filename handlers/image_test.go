@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 )
 
 func TestUploadImage(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -35,10 +36,17 @@ func TestUploadImage(t *testing.T) {
 	if resp["analysis_status"] != "pending" {
 		t.Errorf("expected analysis_status 'pending', got %v", resp["analysis_status"])
 	}
+	storagePath, ok := resp["storage_path"].(string)
+	if !ok || storagePath == "" {
+		t.Fatalf("expected non-empty storage_path, got %v", resp["storage_path"])
+	}
+	if _, err := os.Stat(storagePath); err != nil {
+		t.Fatalf("expected upload file at %s: %v", storagePath, err)
+	}
 }
 
 func TestUploadImageValidation(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -67,7 +75,7 @@ func TestUploadImageValidation(t *testing.T) {
 }
 
 func TestUploadImageUnauthorized(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 
 	body := map[string]interface{}{
@@ -86,7 +94,7 @@ func TestUploadImageUnauthorized(t *testing.T) {
 }
 
 func TestListImages(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -117,7 +125,7 @@ func TestListImages(t *testing.T) {
 }
 
 func TestListImagesMissingUserID(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -128,7 +136,7 @@ func TestListImagesMissingUserID(t *testing.T) {
 }
 
 func TestGetImage(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -153,7 +161,7 @@ func TestGetImage(t *testing.T) {
 }
 
 func TestGetImageNotFound(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -164,7 +172,7 @@ func TestGetImageNotFound(t *testing.T) {
 }
 
 func TestUpdateImage(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -198,7 +206,7 @@ func TestUpdateImage(t *testing.T) {
 }
 
 func TestDeleteImage(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
@@ -214,10 +222,14 @@ func TestDeleteImage(t *testing.T) {
 	var created map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &created)
 	id := fmt.Sprintf("%.0f", created["id"].(float64))
+	storagePath := created["storage_path"].(string)
 
 	w = performRequest(r, "DELETE", "/api/v1/images/"+id, nil, token)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status 200, got %d", w.Code)
+	}
+	if _, err := os.Stat(storagePath); !os.IsNotExist(err) {
+		t.Fatalf("expected deleted upload file at %s, got stat err %v", storagePath, err)
 	}
 
 	// verify it's gone
@@ -228,7 +240,7 @@ func TestDeleteImage(t *testing.T) {
 }
 
 func TestDownloadImage(t *testing.T) {
-	setupTestDB()
+	setupTestDB(t)
 	r := setupRouter()
 	token := getAuthToken(r)
 
